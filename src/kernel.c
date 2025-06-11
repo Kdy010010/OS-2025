@@ -239,10 +239,17 @@ static void cli(void){
         }
         else if(!strncmp(line,"write ",6)) file_write_or_append(line+6,0);
         else if(!strncmp(line,"append ",7)) file_write_or_append(line+7,1);
-        else if(!strncmp(line,"run ",4)){
-            dirent_t e;if(!fs_find(cur_dir,line+4,&e)){puts("no file\n");continue;}if(e.size==0){puts("dir\n");continue;}
-            uint8_t*buf=(void*)0x200000;fs_load_file(&e,buf);elf_exec(buf);
-        }
+/* run 명령 처리 부분 */
+else if(!strncmp(line,"run ",4)){
+    dirent_t e;
+    if(!fs_find(cur_dir,line+4,&e)){puts("no file\n");continue;}
+    if(e.size==0){puts("dir\n");continue;}
+
+    uint8_t *buf = (void*)0x400000;   /* ← 4 MiB, 커널·ELF 영역과 겹치지 않게 */
+    fs_load_file(&e, buf);
+    elf_exec(buf);
+}
+
         else if(!strcmp(line,"reboot")){outb(0x64,0xFE);__asm__ volatile("hlt");}
         else if(!strncmp(line,"rm ",3)) cmd_rm(line+3);
         else if(!strncmp(line,"rmdir ",6)) cmd_rmdir(line+6);
