@@ -239,13 +239,24 @@ static void cli(void){
         }
         else if(!strncmp(line,"write ",6)) file_write_or_append(line+6,0);
         else if(!strncmp(line,"append ",7)) file_write_or_append(line+7,1);
-/* run 명령 처리 부분 */
 else if(!strncmp(line,"run ",4)){
+    const char *fname = line + 4;
     dirent_t e;
-    if(!fs_find(cur_dir,line+4,&e)){puts("no file\n");continue;}
-    if(e.size==0){puts("dir\n");continue;}
 
-    uint8_t *buf = (void*)0x400000;   /* ← 4 MiB, 커널·ELF 영역과 겹치지 않게 */
+    /* 1️⃣ 현재 디렉터리 우선 */
+    if(!fs_find(cur_dir, fname, &e)){
+        /* 2️⃣ 루트(/)의 bin/ 폴더 fallback */
+        dirent_t bin;
+        if( fs_find(ROOT_LBA, "bin", &bin) && bin.size == 0 ){   /* bin is dir */
+            if( fs_find(bin.lba, fname, &e) == 0 ){              /* 여기도 실패 */
+                puts("no file\n"); continue;
+            }
+        } else { puts("no file\n"); continue; }
+    }
+
+    if(e.size == 0){ puts("dir\n"); continue; }
+
+    uint8_t *buf = (void*)0x400000;      /* 4 MiB 워킹 버퍼 */
     fs_load_file(&e, buf);
     elf_exec(buf);
 }
