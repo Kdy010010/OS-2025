@@ -286,9 +286,42 @@ else if(!strncmp(line,"run ",4)){
             ata_write28(lba,sc,buf);fs_add_entry(cur_dir,dst,lba,e.size);puts("copied\n");
         }
         else if(!strcmp(line,"devs")) cmd_devs();
-        else {
-            dirent_t e;if(fs_find(cur_dir,line,&e)&&e.size){uint8_t*buf=(void*)0x200000;fs_load_file(&e,buf);elf_exec(buf);}else puts("?\n");
+/* ── CLI 끝부분 ────────────────────────────────────────── */
+/* --- 실행 시도: 현재 dir → /bin → .elf 보강 -------------------------- */
+/* ─── 내부 전용 “이름 + .elf” 조합기 ─────────────────── */
+/* ── CLI 끝부분 ────────────────────────────────────────── */
+else {                                    /* 아무 명령에도 안 맞을 때 */
+    const char *fname = line;
+    dirent_t e;
+
+    /* 1) 현재 디렉터리 우선 */
+    if (!fs_find(cur_dir, fname, &e)) {
+        /* 2) /bin 폴더 fallback */
+        dirent_t bin;
+        if (fs_find(ROOT_LBA, "bin", &bin) && bin.size == 0) {
+            if (!fs_find(bin.lba, fname, &e)) {   /* 거기에도 없으면 실패 */
+                puts("?\n");
+                continue;
+            }
+        } else {               /* /bin이 없거나 파일 못 찾음 */
+            puts("?\n");
+            continue;
         }
+    }
+
+    if (e.size == 0) {         /* 디렉터리라면 실행 거부 */
+        puts("dir\n");
+        continue;
+    }
+
+    uint8_t *buf = (void*)0x400000;   /* 4 MiB 임시 버퍼 */
+    fs_load_file(&e, buf);
+    elf_exec(buf);                    /* 정상 실행 */
+}
+
+
+
+
     }
 }
 
