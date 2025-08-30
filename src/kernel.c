@@ -1,6 +1,6 @@
 /*  OS/2025 – writable 2025FS + CLI + ELF32 loader (fixed 32‑byte dirent)
  *
- *  build:
+ *  빌드:
  *     gcc   -m32 -ffreestanding -nostdlib -c kernel.c
  *     ld    -m elf_i386 -T link.ld -nostdlib -o kernel.elf kernel.o
  *     objcopy -O binary kernel.elf kernel.bin
@@ -243,9 +243,9 @@ else if(!strncmp(line,"run ",4)){
     const char *fname = line + 4;
     dirent_t e;
 
-    /* 1️⃣ 현재 디렉터리 우선 */
+    /* 1. 현재 디렉터리 우선 */
     if(!fs_find(cur_dir, fname, &e)){
-        /* 2️⃣ 루트(/)의 bin/ 폴더 fallback */
+        /* 2. 루트(/)의 bin/ 폴더 fallback */
         dirent_t bin;
         if( fs_find(ROOT_LBA, "bin", &bin) && bin.size == 0 ){   /* bin is dir */
             if( fs_find(bin.lba, fname, &e) == 0 ){              /* 여기도 실패 */
@@ -309,7 +309,7 @@ else {                                    /* 아무 명령에도 안 맞을 때 
         }
     }
 
-    if (e.size == 0) {         /* 디렉터리라면 실행 거부 */
+    if (e.size == 0) {         /* 디렉터리라면 실행 거부 되겠냐고 */
         puts("dir\n");
         continue;
     }
@@ -325,7 +325,7 @@ else {                                    /* 아무 명령에도 안 맞을 때 
     }
 }
 
-/* ---------- entry ---------- */
+/* ---------- 엔트리 네이버 아니다 ---------- */
 void kmain(void){
     fs_scan_root();
     puts("boot success\n========================================\n        OS/2025 v1.3 (dirent32)\n        Developed by kdy010010\n        Type 'devs' for contributors\n========================================\n\nType 'help' to see available commands.\n\n");
